@@ -1,0 +1,54 @@
+<html>
+<head>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"</script>
+<script src="http://ajax.googleapis.com/ajax/libs/jquerymobile/1.4.5/jquery.mobile.min.js"</script>
+<link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css" />
+<script src="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+
+<script>
+
+function Register(){
+	var userId = document.getElementById("user").value;
+	var password = document.getElementById("pass").value;
+
+	var  URL = "http://localhost:8080/Register";
+  var jsonObj = {
+    "userId": userId,
+    "password" : password
+  }
+  $.ajax({
+    type:"GET",
+    url:URL,
+    data:jsonObj,
+    dataType:"html",
+    success:function(msg){
+      if (msg=="False"){
+        alert("Username Already Exists");
+      }
+      else {
+        window.location = "/Login.html";
+      }
+    //  $("#display_transcript").html(msg);
+    },
+    error:function(xhr, ajaxOptions, thrownError){
+    //$("#display_transcript").html("Error contacting server!");
+  }
+});
+
+};
+</script>
+</head>
+	<body>
+		<div data-role="page">
+			<div data-role="header">
+				<h1>Register</h1>
+			</div> <!--header-->
+			<div data-role="main" class="ui-content">
+				<input type="text" id="user" placeholder="username" value="">
+				<input type="password" id="pass" placeholder="password" value=""><br>
+				<button onclick="Register();" id="button">Register</button>
+			</div> <!--main-->
+		</div> <!--page-->
+	</body>
+
+</html>

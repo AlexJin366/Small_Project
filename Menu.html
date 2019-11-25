@@ -1,0 +1,276 @@
+<html>
+<head>
+
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"</script>
+<script src="http://ajax.googleapis.com/ajax/libs/jquerymobile/1.4.5/jquery.mobile.min.js"</script>
+<link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css" />
+<script src="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+
+<script>
+
+function popup(i = -1){
+	document.getElementById("cover").style.display = "block";
+	document.getElementById("popup").style.display = "block";
+
+	var editIndex = i;
+	if (i == -1){
+		document.getElementById("popupName").innerHTML = "Add a New Book";
+		document.getElementById("button").innerHTML = "Add Book";
+		document.getElementById("button").setAttribute( "onClick", "confirm('add')");
+
+	}else{
+		var  URL = "http://localhost:8080/GetBook";
+		$.ajax({
+			type:"GET",
+			url:URL,
+			data:{bookId:i},
+			dataType:"html",
+			success:function(json){
+				var books = JSON.parse(json);
+				console.log(books);
+				console.log("book at id loaded");
+				document.getElementById("BookTitle").value=books[0].booktitle;
+				document.getElementById("BookLocation").value=books[0].location;
+				var date = books[0].DueDate.split("T")[0];
+				console.log(date);
+			  var date1 = new Date(date[0],date[1]-1,date[2]);
+				console.log(date1);
+				document.getElementById("BookDue").value=date;
+			}
+		});
+		document.getElementById("popupName").innerHTML = "Edit a Book";
+		document.getElementById("button").innerHTML = "Confirm Edit";
+		document.getElementById("button").setAttribute( "onClick", "confirm('edit',"+ i +");" );
+
+	}
+
+}
+function cancel(){
+	document.getElementById("BookID").value = "";
+	document.getElementById("BookTitle").value = "";
+	document.getElementById("BookLocation").value = "";
+	document.getElementById("BookDue").value = "";
+	document.getElementById("popup").style.display = "none";
+	document.getElementById("remConfirm").style.display = "none";
+	document.getElementById("cover").style.display = "none";
+}
+
+function confirm(type,i = -1){
+	var userId = document.getElementById("welcome").innerHTML.split(" ")[1].split("!")[0]
+	//var BookID = document.getElementById("BookID").value;
+	var BookTitle = document.getElementById("BookTitle").value;
+	var BookLocation = document.getElementById("BookLocation").value;
+	var BookDue = document.getElementById("BookDue").value;
+	console.log(userId)
+	document.getElementById("BookID").value = "";
+	document.getElementById("BookTitle").value = "";
+	document.getElementById("BookLocation").value = "";
+	document.getElementById("BookDue").value = "";
+	console.log(1);
+	if (type == "add"){
+		var  URL = "http://localhost:8080/Add";
+		$.ajax({
+			type:"GET",
+			url:URL,
+			data:{userId:userId,booktitle:BookTitle,location:BookLocation,dueDate:BookDue},
+			dataType:"html",
+			success:function(json){
+				console.log("book added");
+			}
+		});
+	}else{
+		var  URL = "http://localhost:8080/Edit";
+		$.ajax({
+			type:"GET",
+			url:URL,
+			data:{bookId:i,booktitle:BookTitle,location:BookLocation,dueDate:BookDue},
+			dataType:"html",
+			success:function(json){
+				console.log("book edited");
+			}
+		});
+	}
+	document.getElementById("popup").style.display = "none";
+	document.getElementById("cover").style.display = "none";
+
+	getBooks();
+
+}
+
+function remConfirm(bookId){
+	document.getElementById("cover").style.display = "block";
+	document.getElementById("remConfirm").style.display = "block";
+	document.getElementById("remMessage").innerHTML = "Do you want to remove this book?";
+	document.getElementById("remConfirmButton").setAttribute( "onClick", "remBook("+ bookId +");" );
+}
+
+function remBook(bookId){
+	document.getElementById("remConfirm").style.display = "none";
+	document.getElementById("cover").style.display = "none";
+	var  URL = "http://localhost:8080/Remove";
+	$.ajax({
+		type:"GET",
+		url:URL,
+		data:{bookId:bookId},
+		dataType:"html",
+		success:function(json){
+			var books = JSON.parse(json);
+			console.log("Book Removed");
+		}
+	});
+
+	getBooks();
+
+}
+
+//Get current date in required format
+function getToday(){
+	var today = new Date();
+	var year = today.getFullYear();
+	var month = today.getMonth();
+	var day = today.getDate();
+	var date = new Date(year,month,day);
+	return date
+}
+
+//Calculate days remaining (due date - current date)
+function remainingDays(dueDate, i){
+	var date1 = new Date(dueDate[0],dueDate[1]-1,dueDate[2]); ;
+	var date2 = getToday();
+	var remaining = (date1.getTime() - date2.getTime())/(1000*3600*24); //getTime returns the number of milliseconds between date 1 and 2
+	return remaining
+}
+
+
+//Update books table
+function getBooks(){
+	jQuery(document).ready(function($) {
+		//Ajax request to get books
+		var  URL = "http://localhost:8080/Menu";
+		$.ajax({
+			type:"GET",
+			url:URL,
+			dataType:"html",
+			success:function(json){
+				var books = JSON.parse(json);
+				console.log(books);
+				document.getElementById("welcome").innerHTML="Welcome "+books[0].userId+"!";
+				//If user has no books borrowed
+				if (books[0].bookId == '-1'){
+					var menu = "<p>No borrowed books</p>";
+
+				//If user has at least one book borrowed contruct a table with book data
+				}else{
+					var menu = "<tr><th>ID</th><th>Title</th>" +
+						"<th>Location</th><th>Due</th></tr>"
+					for(i=0; i<=(books.length -1); i++){
+						var dueDateFull = books[i].DueDate.split("T");
+						var dueDate = dueDateFull[0].split("-");
+						var rowColor ="#f9f9f9";
+						var due = " <b>"+ remainingDays(dueDate, i) +" days remaining</b>";
+
+						//Color rows based on how close it is to the due date
+						if (remainingDays(dueDate, i) < 0){
+							rowColor = "#ffaaaa";
+							due = " <b><font color='#ff0000'>Overdue</font></b>";
+						}else if (remainingDays(dueDate, i) == 0){
+							rowColor = "#ffbcbc";
+							due = " <b>Due Today</b>";
+						}else if (remainingDays(dueDate, i) == 1){
+							rowColor = "#ffd1bc";
+							due = " <b>Due Tomorrow</b>";
+						}else if (remainingDays(dueDate, i) <= 3){
+							rowColor = "#ffe6bc";
+						}
+
+						//Contruct table
+						menu += "<tr bgcolor='"+ rowColor +"'><td>"+ books[i].bookId + "</td>" +
+							"<td>"+ books[i].booktitle + "</td>" +
+							"<td>"+ books[i].location + "</td>" +
+							"<td>"+ dueDate[1] + "/" + dueDate[2] + "/" + dueDate[0] + "</td>" +
+							"<td>"+ due + "</td>" +
+							"<td width='80px'><button  class='ui-btn ui-mini' onclick='popup("+books[i].bookId+");'>Edit</button></td>" +
+							"<td width='40px'><a href='#' class='ui-btn ui-icon-delete ui-btn-icon-notext ui-corner-all' onclick='remConfirm("+books[i].bookId+");'>No text</a></td></tr>"
+					}
+				}
+
+				$('#menu').html(menu);
+			},
+			error:function(xhr, ajaxOptions, thrownError){
+				console.log(thrownError);
+			}
+		})
+	})
+}
+getBooks()
+
+setInterval(getBooks(), 500);
+
+/*Stuff to do
+Adding new book
+ - check if id exists
+ - auto generate ID?
+ - Append new row
+
+Edit
+ - Make it so that you cannot change ID
+
+ - Ajax request to delete row with bookID and create new entry?
+ - Ajax request to change cells inside row with bookID
+
+Remove
+ - Ajax request to delete row with bookID
+*/
+
+
+
+</script>
+
+
+</head>
+	<textarea id="output"></textarea>
+	<body>
+		<div data-role="page">
+			<div data-role="header">
+				<h1 id="welcome"></h1>
+			</div> <!--header-->
+			<div data-role="main" class="ui-content" id="main">
+				<div id="cover" style="position: fixed;background-color: #37373722;z-index: 1;left: 0%;right: 0%;top: 0%;bottom: 0%;display: none;"></div>
+
+				<div id="remConfirm" style="position: fixed;z-index: 2;left: 25%;right: 25%;display: none;">
+					<table border="1px" class="ui-table" bgcolor="#F5F5F5">
+						<tr><td id="remMessage"></td></tr>
+					</table>
+					<table border="1px" class="ui-table" bgcolor="#F5F5F5">
+						<tr><th width="50%"><button onclick="cancel();">Cancel</th>
+							<th><button id="remConfirmButton" onclick="">Confirm</th></tr>
+
+					</table>
+				</div> <!--remConfirm-->
+
+				<div id="popup" style="position: fixed;z-index: 2;left: 15%;right: 15%;display: none;">
+					<table border="1px" class="ui-table" bgcolor="#F5F5F5"><tr><th id="popupName">Add a New Book</th></tr></table>
+					<table border="1px" class="ui-table" bgcolor="#F5F5F5">
+						<tr hidden><th>Book ID</th><td><input type="text" id="BookID" placeholder="Book ID" value=""></td></tr>
+						<tr><th>Title</th><td><input type="text" id="BookTitle" placeholder="Title" value=""></td></tr>
+						<tr><th>Location</th><td><input type="text" id="BookLocation" placeholder="Location" value=""></td></tr>
+						<tr><th>Due Date</th><td><input id="BookDue" type="date"/><!--<input type="text" id="BookDue" placeholder="MM/DD/YYYY" value=""></td></tr>-->
+					</table>
+					<table border="1px" class="ui-table" bgcolor="#F5F5F5">
+						<tr><td width="50%"><button onclick="cancel();">Cancel</button></td>
+							<td><button id="button" onclick=""></button></td></tr>
+					</table>
+				</div> <!--popup-->
+
+				<!--<button onclick="getBooks();">Refesh</button>-->
+				<div>
+				<table border="1px" class='ui-table'>
+				<table border="1px" id="menu" class='ui-table' ></table>
+					<tr><td><button onclick="popup(-1);">Add a new book</button></td></tr>
+				</table>
+				</div>
+			</div> <!--main-->
+		</div> <!--page-->
+	</body>
+
+</html>

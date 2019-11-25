@@ -1,0 +1,71 @@
+<html>
+<head>
+<style>
+.ui-content a {
+  color: #FFFFFF;
+  text-decoration: none;
+}
+</style>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"</script>
+<script src="http://ajax.googleapis.com/ajax/libs/jquerymobile/1.4.5/jquery.mobile.min.js"</script>
+<link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css" />
+<script src="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+
+<script>
+function login(){
+
+	var userId = document.getElementById("user").value;
+	var password = document.getElementById("pass").value;
+
+  //if else statment for checking the sql data in user table
+  //if is true redirect the page to the bookrecord page for that specific userid
+  //else output message "input correct data or register for a new account"
+  var  URL = "http://localhost:8080/Login";
+  var jsonObj = {
+    "userId": userId,
+    "password" : password
+  }
+  $.ajax({
+    type:"GET",
+    url:URL,
+    data:jsonObj,
+    async:false,
+    dataType:"html",
+    success:function(msg){
+      if (msg=="False"){
+        alert("User or Password Invalid");
+      }
+      else {
+        window.location = "/Menu.html";
+      }
+    //  $("#display_transcript").html(msg);
+    },
+    error:function(xhr, ajaxOptions, thrownError){
+    //$("#display_transcript").html("Error contacting server!");
+  }
+});
+   //
+}
+
+
+
+function register(){
+  window.location = "/Register.html";
+}
+</script>
+</head>
+	<body>
+		<div data-role="page">
+			<div data-role="header">
+				<h1>Login</h1>
+			</div> <!--header-->
+			<div data-role="main" class="ui-content">
+				<input type="text" id="user" placeholder="username" value="">
+				<input type="password" id="pass" placeholder="password" value=""><br>
+				<table width="100%"><tr><td width="50%"><button onclick="register();" id="button">Create New Account</button></td>
+				<td><button onclick="login();" id="button">Login</button></td></tr></table>
+			</div> <!--main-->
+		</div> <!--page-->
+	</body>
+
+</html>
